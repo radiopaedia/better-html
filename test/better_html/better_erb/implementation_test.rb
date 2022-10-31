@@ -408,6 +408,56 @@ module BetterHtml
           "        ^^^^^^^^^", e.message
       end
 
+      def assert_safe_error(input, locals, output, errs)
+        errors = []
+        config = build_config(error_handler: ->(e){ errors << e })
+        assert_equal(output, render(input, locals: locals, config: config))
+        assert_equal errs.length, errors.length
+        errs.zip(errors).each do |(klass, message), actual|
+          assert_kind_of klass, actual
+          assert_equal message, actual.message
+        end
+      end
+
+      test "configuring the error handler works: safe_quoted_value_append" do
+        assert_safe_error(
+          "<a href=\"<%= value %>\">",
+          { value: ' \'">x '.html_safe },
+          "<a href=\" '\">x \">",
+          [[BetterHtml::UnsafeHtmlError,
+            "Detected invalid characters as part of the interpolation "\
+            "into a quoted attribute value. The value cannot contain the character \"."]]
+        )
+      end
+
+      test "configuring the error handler works: safe_unquoted_value_append" do
+        assert_safe_error(
+          "<a href=<%= value %>>",
+          { value: '\'x\''.html_safe },
+          "<a href='x'>",
+          [[BetterHtml::HtmlError,
+            "1 error(s) found in HTML document.\n"\
+            "expected attribute value after '='\n"\
+            "On line 1 column 20:\n"\
+            "<a href=<%= value %>>\n"\
+            "                    ^"],
+           [BetterHtml::DontInterpolateHere,
+            "Do not interpolate without quotes after attribute around 'href=<%= value %>'."]]
+        )
+      end
+
+      test "configuring the error handler works: safe_space_after_attribute_append" do
+        assert_safe_error(
+          "<a href='a'<%= value %>>",
+          { value: ' b'.html_safe },
+          "<a href='a' b>",
+          [
+           [BetterHtml::DontInterpolateHere,
+            "Add a space after this attribute value. Instead of <a href=\"a\"<%= value %>> "\
+            "try <a href=\"a\" <%= value %>>."]]
+        )
+      end
+
       private
 
       class ViewContext < ActionView::Base

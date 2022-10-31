@@ -23,4 +23,17 @@ module BetterHtml
       @column = column
     end
   end
+
+  def self.error(klass, message)
+    begin
+      raise klass, message
+    rescue => e
+      if handler = BetterHtml.config.error_handler
+        STDERR.puts "calling handler with #{e.inspect}"
+        handler.(e)
+      else
+        raise
+      end
+    end
+  end
 end

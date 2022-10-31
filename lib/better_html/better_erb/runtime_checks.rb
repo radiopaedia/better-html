@@ -87,7 +87,7 @@ module BetterHtml
           code = code.lines.first
           s << "#{prefix}#{code}\n"
           s << "#{" " * prefix.size}#{"^" * code.size}"
-          raise BetterHtml::DontInterpolateHere, s
+          BetterHtml.error BetterHtml::DontInterpolateHere, s
         end
       end
 
@@ -104,7 +104,7 @@ module BetterHtml
           s << "#{" " * error.column}#{"^" * (line.size - error.column)}"
         end
 
-        raise BetterHtml::HtmlError, s
+        BetterHtml.error BetterHtml::HtmlError, s
       end
 
       def check_token(type, *args)
@@ -122,7 +122,7 @@ module BetterHtml
         s = +"Invalid tag name #{text.inspect} does not match "\
           "regular expression #{@config.partial_tag_name_pattern.inspect}\n"
         s << build_location(line, column, text.size)
-        raise BetterHtml::HtmlError, s
+        BetterHtml.error BetterHtml::HtmlError, s
       end
 
       def check_attribute_name(type, start, stop, line, column)
@@ -132,7 +132,7 @@ module BetterHtml
         s = +"Invalid attribute name #{text.inspect} does not match "\
           "regular expression #{@config.partial_attribute_name_pattern.inspect}\n"
         s << build_location(line, column, text.size)
-        raise BetterHtml::HtmlError, s
+        BetterHtml.error BetterHtml::HtmlError, s
       end
 
       def check_quoted_value(type, start, stop, line, column)
@@ -143,7 +143,7 @@ module BetterHtml
 
         s = +"Single-quoted attributes are not allowed\n"
         s << build_location(line, column, text.size)
-        raise BetterHtml::HtmlError, s
+        BetterHtml.error BetterHtml::HtmlError, s
       end
 
       def check_unquoted_value(type, start, stop, line, column)
@@ -151,7 +151,7 @@ module BetterHtml
 
         s = +"Unquoted attribute values are not allowed\n"
         s << build_location(line, column, stop - start)
-        raise BetterHtml::HtmlError, s
+        BetterHtml.error BetterHtml::HtmlError, s
       end
 
       def build_location(line, column, length)
